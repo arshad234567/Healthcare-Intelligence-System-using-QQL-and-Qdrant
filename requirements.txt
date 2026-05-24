@@ -1,0 +1,17 @@
+pandas
+numpy
+jupyter
+notebook
+
+qdrant-client
+fastembed
+
+fastapi
+uvicorn
+
+agno
+groq
+
+pydantic
+
+python-dotenv
