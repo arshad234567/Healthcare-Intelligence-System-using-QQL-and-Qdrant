@@ -1,5 +1,4 @@
-const BASE_URL = "http://127.0.0.1:8000"
-
+const BASE_URL = "https://healthcare-intelligence-system-using-qql.onrender.com"
 export async function askHealthcareAI(query) {
 
   const response = await fetch(
