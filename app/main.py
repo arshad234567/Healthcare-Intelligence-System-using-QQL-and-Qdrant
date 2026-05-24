@@ -2,10 +2,19 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 
 from agent.healthcare_agent import run_healthcare_rag
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(
     title="Agentic Healthcare RAG API",
     version="1.0.0"
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 #request schema
