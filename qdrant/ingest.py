@@ -24,7 +24,7 @@ embedding_model = TextEmbedding(
 #load dataset
 
 df = pd.read_csv(
-    "data/preprocessed_healthcare_dataset.csv"
+    r"C:\Users\arsha\OneDrive\Desktop\Healthcare Retrieval using qql\Data\processed_healthcare_dataset.csv"
 )
 
 #parsed documents
@@ -131,9 +131,18 @@ print(f"Prepared {len(points)} vector points")
 
 #upload vectors
 
-client.upsert(
-    collection_name=COLLECTION_NAME,
-    points=points
-)
+BATCH_SIZE = 10
 
-print("Vectors uploaded successfully")
+for i in range(0, len(points), BATCH_SIZE):
+
+    batch = points[i:i + BATCH_SIZE]
+
+    client.upsert(
+        collection_name=COLLECTION_NAME,
+        points=batch
+    )
+
+    print(
+        f"Uploaded batch "
+        f"{i // BATCH_SIZE + 1}"
+    )

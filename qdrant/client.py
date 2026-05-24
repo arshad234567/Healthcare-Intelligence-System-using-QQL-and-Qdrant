@@ -1,16 +1,29 @@
-"""
-qdrant/client.py
-
-Qdrant client configuration
-"""
+from dotenv import load_dotenv
+import os
 
 from qdrant_client import QdrantClient
 
-#initialize qdrant client
+#load env variables
 
-client = QdrantClient(
-    host="localhost",
-    port=6333
+load_dotenv()
+
+#qdrant credentials
+
+QDRANT_URL = os.getenv(
+    "QDRANT_URL"
 )
 
-COLLECTION_NAME = "healthcare_conversations"
+QDRANT_API_KEY = os.getenv(
+    "QDRANT_API_KEY"
+)
+
+#qdrant client
+
+client = QdrantClient(
+    url=QDRANT_URL,
+    api_key=QDRANT_API_KEY
+)
+
+COLLECTION_NAME = (
+    "healthcare_conversations"
+)
