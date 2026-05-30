@@ -1,117 +1,286 @@
-"""
-agent/healthcare_agent.py
+#import libraries
+import logging
+from typing import Dict
+from typing import List
 
-Main Agentic Healthcare RAG Agent
-using Groq + Agno
-"""
+from agent.routing_agent import RoutingAgent
+from agent.cardiology_agent import CardiologyAgent
+from agent.neurology_agent import NeurologyAgent
+from agent.pulmonology_agent import PulmonologyAgent
+from agent.emergency_detection_agent import EmergencyDetectionAgent
+from agent.safety_agent import SafetyAgent
 
-import os
-
-from agno.agent import Agent
-from agno.models.groq import Groq
-
-from agent.retrieval_tool import healthcare_retrieval_node
-
-from agent.prompts import (
-    HEALTHCARE_SYSTEM_PROMPT,
-    RAG_INSTRUCTIONS,
-    SAFETY_PROMPT,
-    FINAL_RESPONSE_PROMPT
+#configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s"
 )
 
-#build healthcare agent
+#healthcare orchestrator agent
+class HealthcareAgent:
 
-healthcare_agent = Agent(
+    #initialize agents
+    def __init__(self):
 
-    model=Groq(
-        id="llama-3.1-8b-instant",
-        api_key=os.getenv("GROQ_API_KEY")
-    ),
+        self.router=RoutingAgent()
 
-    description="Agentic Healthcare RAG System",
+        self.cardiology_agent=CardiologyAgent()
 
-    instructions=[
-        HEALTHCARE_SYSTEM_PROMPT,
-        RAG_INSTRUCTIONS,
-        SAFETY_PROMPT,
-        FINAL_RESPONSE_PROMPT
-    ],
+        self.neurology_agent=NeurologyAgent()
 
-    markdown=True
-)
+        self.pulmonology_agent=PulmonologyAgent()
 
-#main rag pipeline
+        self.emergency_agent=EmergencyDetectionAgent()
 
-def run_healthcare_rag(user_query: str):
+        self.safety_agent=SafetyAgent()
 
-    #workflow state
-    state = {
-        "user_query": user_query,
-        "retrieved_contexts": [],
-        "trace": []
-    }
+        self.logger=logging.getLogger(
+            self.__class__.__name__
+        )
 
-    #retrieve medical contexts
-    updated_state = healthcare_retrieval_node(state)
+    #validate inputs
+    def validate_inputs(
+        self,
+        query:str,
+        graph_context:List,
+        semantic_context:List
+    )->None:
 
-    retrieved_contexts = updated_state["retrieved_contexts"]
+        if not query.strip():
 
-    #build retrieval context
-    context_text = ""
+            raise ValueError(
+                "query cannot be empty"
+            )
 
-    for idx, context in enumerate(retrieved_contexts):
+        if not isinstance(
+            graph_context,
+            list
+        ):
 
-        context_text += f"""
-Medical Context {idx + 1}
+            raise TypeError(
+                "graph_context must be list"
+            )
 
-Patient Query:
-{context['patient_query']}
+        if not isinstance(
+            semantic_context,
+            list
+        ):
 
-Doctor Response:
-{context['doctor_response']}
-"""
+            raise TypeError(
+                "semantic_context must be list"
+            )
 
-    #final prompt
-    final_prompt = f"""
-User Healthcare Query:
-{user_query}
+    #run specialist agents
+    def run_specialists(
+        self,
+        selected_agents:List,
+        query:str,
+        graph_context:List,
+        semantic_context:List
+    )->Dict:
 
-Retrieved Medical Conversations:
-{context_text}
+        specialist_outputs={}
 
-Generate a medically grounded healthcare response
-using the retrieved context.
-"""
+        if "cardiology_agent" in selected_agents:
 
-    #generate response
-    response = healthcare_agent.run(final_prompt)
+            specialist_outputs[
+                "cardiology"
+            ]=self.cardiology_agent.generate_response(
 
-    return {
-        "query": user_query,
-        "retrieved_contexts": retrieved_contexts,
-        "response": response.content,
-        "trace": updated_state["trace"]
-    }
+                query,
 
-#testing
+                graph_context,
 
-if __name__ == "__main__":
+                semantic_context
 
-    query = "I have chest pain and difficulty breathing"
+            )
 
-    result = run_healthcare_rag(query)
+        if "neurology_agent" in selected_agents:
 
-    print("\n")
-    print("=" * 80)
-    print("USER QUERY")
-    print(result["query"])
+            specialist_outputs[
+                "neurology"
+            ]=self.neurology_agent.generate_response(
 
-    print("\n")
-    print("=" * 80)
-    print("AI RESPONSE")
-    print(result["response"])
+                query,
 
-    print("\n")
-    print("=" * 80)
-    print("TRACE")
-    print(result["trace"])
+                graph_context,
+
+                semantic_context
+
+            )
+
+        if "pulmonology_agent" in selected_agents:
+
+            specialist_outputs[
+                "pulmonology"
+            ]=self.pulmonology_agent.generate_response(
+
+                query,
+
+                graph_context,
+
+                semantic_context
+
+            )
+
+        return specialist_outputs
+
+    #build final response
+    def build_final_response(
+        self,
+        emergency_result:Dict,
+        specialist_outputs:Dict
+    )->str:
+
+        final_response=""
+
+        final_response+=(
+            f"Emergency Level: "
+            f"{emergency_result.get('emergency_level')}\n\n"
+        )
+
+        final_response+=(
+            f"Reason: "
+            f"{emergency_result.get('reason')}\n\n"
+        )
+
+        for agent_name,response in specialist_outputs.items():
+
+            final_response+=(
+                f"\n{agent_name.upper()} "
+                f"SPECIALIST OPINION\n"
+            )
+
+            final_response+=(
+                "-"*50
+            )
+
+            final_response+="\n"
+
+            final_response+=response
+
+            final_response+="\n\n"
+
+        return final_response
+
+    #run healthcare pipeline
+    def process_query(
+        self,
+        query:str,
+        graph_context:List,
+        semantic_context:List
+    )->Dict:
+
+        self.validate_inputs(
+
+            query,
+
+            graph_context,
+
+            semantic_context
+
+        )
+
+        emergency_result=self.emergency_agent.detect_emergency(
+            query
+        )
+
+        routing_result=self.router.route(
+            query
+        )
+
+        selected_agents=routing_result[
+            "selected_agents"
+        ]
+
+        specialist_outputs=self.run_specialists(
+
+            selected_agents,
+
+            query,
+
+            graph_context,
+
+            semantic_context
+
+        )
+
+        final_response=self.build_final_response(
+
+            emergency_result,
+
+            specialist_outputs
+
+        )
+
+        safety_result=self.safety_agent.review_response(
+            final_response
+        )
+
+        if safety_result[
+            "decision"
+        ]=="UNSAFE":
+
+            final_response=safety_result[
+                "corrected_response"
+            ]
+
+        return {
+
+            "query":query,
+
+            "emergency_assessment":
+            emergency_result,
+
+            "selected_agents":
+            selected_agents,
+
+            "specialist_outputs":
+            specialist_outputs,
+
+            "safety_review":
+            safety_result,
+
+            "final_response":
+            final_response
+
+        }
+
+#run smoke test
+if __name__=="__main__":
+
+    healthcare_agent=HealthcareAgent()
+
+    query="""
+    I have chest pain and dizziness from past 3 hours
+    """
+
+    graph_context=[
+
+        "chest pain RELATED_TO cardiac disease",
+
+        "dizziness RELATED_TO bppv",
+
+        "chest pain RELATED_TO myocardial infarction"
+
+    ]
+
+    semantic_context=[
+
+        "Patient reports chest pain and dizziness lasting several hours."
+
+    ]
+
+    result=healthcare_agent.process_query(
+
+        query,
+
+        graph_context,
+
+        semantic_context
+
+    )
+
+    print(
+        result["final_response"]
+    )
