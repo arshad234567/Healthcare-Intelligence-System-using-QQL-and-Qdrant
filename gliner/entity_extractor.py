@@ -12,7 +12,7 @@ logging.basicConfig(
 
 
 class EntityExtractor:
-    #initialize extractor
+
     def __init__(self):
         self.labels=[
 
@@ -42,7 +42,6 @@ class EntityExtractor:
             "GLiNER model loaded successfully"
         )
 
-    #validate input
     def validate_text(
         self,
         text:str
@@ -63,7 +62,8 @@ class EntityExtractor:
                 "text cannot be empty"
             )
 
-    #extract entities
+
+
     def extract_entities(
         self,
         text:str
@@ -103,7 +103,6 @@ class EntityExtractor:
             return []
 
 if __name__=="__main__":
-
     extractor=EntityExtractor()
 
     query="""
@@ -111,5 +110,4 @@ if __name__=="__main__":
     """
 
     result=extractor.extract_entities(query)
-
     print(result)
