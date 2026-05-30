@@ -1,9 +1,8 @@
-#import libraries
 import logging
 from typing import Dict
 from typing import List
-from gliner import GLiNER
 
+from gliner import GLiNER
 
 logging.basicConfig(
     level=logging.INFO,
