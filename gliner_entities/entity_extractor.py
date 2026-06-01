@@ -1,18 +1,22 @@
+#import libraries
 import logging
 from typing import Dict
 from typing import List
 
 from gliner import GLiNER
 
+#configure logging
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s"
 )
 
-
+#entity extractor
 class EntityExtractor:
 
+    #initialize extractor
     def __init__(self):
+
         self.labels=[
 
             "symptom",
@@ -41,6 +45,7 @@ class EntityExtractor:
             "GLiNER model loaded successfully"
         )
 
+    #validate text
     def validate_text(
         self,
         text:str
@@ -61,8 +66,7 @@ class EntityExtractor:
                 "text cannot be empty"
             )
 
-
-
+    #extract entities
     def extract_entities(
         self,
         text:str
@@ -73,11 +77,25 @@ class EntityExtractor:
         )
 
         try:
-            entities=self.model.predict_entities(text,self.labels)
+
+            entities=self.model.predict_entities(
+
+                text,
+
+                self.labels
+
+            )
+
+            print("\nRAW GLINER OUTPUT\n")
+
+            print(
+                entities
+            )
 
             extracted=[]
 
             for entity in entities:
+
                 extracted.append({
 
                     "entity_text":
@@ -91,22 +109,34 @@ class EntityExtractor:
                         entity["score"],
                         4
                     )
+
                 })
-                return extracted
+
+            return extracted
 
         except Exception as error:
+
             self.logger.error(
                 error
             )
 
             return []
 
+#run smoke test
 if __name__=="__main__":
+
     extractor=EntityExtractor()
 
     query="""
     I have chest pain,dizziness and breathing difficulty
     """
 
-    result=extractor.extract_entities(query)
-    print(result)
+    result=extractor.extract_entities(
+        query
+    )
+
+    print("\nPROCESSED OUTPUT\n")
+
+    print(
+        result
+    )
