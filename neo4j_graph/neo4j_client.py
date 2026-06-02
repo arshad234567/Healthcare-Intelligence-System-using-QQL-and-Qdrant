@@ -3,7 +3,6 @@ import os
 
 from dotenv import load_dotenv
 from neo4j import GraphDatabase
-
 load_dotenv()
 
 logging.basicConfig(
@@ -11,7 +10,7 @@ logging.basicConfig(
     format="%(asctime)s [%(levelname)s] %(message)s"
 )
 
-#neo4j client
+#neo4j_graph client
 class Neo4jClient:
 
     #initialize client
